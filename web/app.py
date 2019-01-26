@@ -1,0 +1,65 @@
+from twisted.internet.defer import inlineCallbacks, returnValue
+from klein import Klein
+import json
+from twisted.web.static import File
+from autobahn.twisted.wamp import Application
+import pdb
+
+app = Klein()
+wampapp = Application()
+
+
+@app.route("/")
+def index(request, branch=True):
+	f = File('dist/index.html')
+	f.isLeaf = True
+	f.type, f.encoding = 'html', None # force MIME type for browser rendering
+	return f
+
+@app.route("/main.js")
+def main(request, branch=True):
+	f = File('dist/main.js')
+	return f
+
+@app.route("/switch", methods=['POST'])
+@inlineCallbacks
+def turnOnPump(request):
+	print("tries to turn on pump")
+	name = request.args.get(b'name', [b'noname'])[0]
+	nameStr = name.decode('utf-8')
+	if(nameStr == 'noname'):
+		return "error"
+	res = yield wampapp.session.call('ch.gpio.switch', nameStr)
+	returnValue(res)
+
+@app.route("/getallnames", methods=['GET'])
+@inlineCallbacks
+def getAllNames(request):
+	print("obtaining all names")
+	res = yield wampapp.session.call('ch.db.getallnames')
+	returnValue(json.dumps(res))
+
+@app.route("/getstate", methods=['GET'])
+@inlineCallbacks
+def getState(request):
+	print("obtaining the state of a specific object")
+	print(request.args)
+	name = request.args.get(b'name', [b'noname'])[0]
+	nameStr = name.decode('utf-8')
+
+	print("Name is" + nameStr)
+	if(nameStr == 'noname'):
+		return "error"
+	res = yield wampapp.session.call('ch.gpio.getstate', nameStr)
+	returnValue(res)
+
+
+if __name__ == "__main__":
+	import sys
+	from twisted.python import log
+	from twisted.web.server import Site
+	from twisted.internet import reactor
+	log.startLogging(sys.stdout)
+	reactor.listenTCP(5000, Site(app.resource()))
+	wampapp.run("ws://localhost:8080/ws", "realm1")
+
