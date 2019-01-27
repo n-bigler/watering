@@ -3,6 +3,7 @@ from klein import Klein
 import json
 from twisted.web.static import File
 from autobahn.twisted.wamp import Application
+from autobahn.wamp.exception import ApplicationError
 import pdb
 
 app = Klein()
@@ -27,9 +28,17 @@ def turnOnPump(request):
 	print("tries to turn on pump")
 	name = request.args.get(b'name', [b'noname'])[0]
 	nameStr = name.decode('utf-8')
+	print(nameStr)
 	if(nameStr == 'noname'):
 		return "error"
-	res = yield wampapp.session.call('ch.gpio.switch', nameStr)
+	try:
+		res = yield wampapp.session.call('ch.gpio.switch', nameStr)
+	except ApplicationError as e:
+		print("call 2 error: {}".format(e))
+		print(e.error_message())
+		request.setResponseCode(409)
+		returnValue([])
+
 	returnValue(res)
 
 @app.route("/getallnames", methods=['GET'])

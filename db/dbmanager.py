@@ -1,10 +1,10 @@
 from os import environ
 import datetime
+import pdb
 
 from twisted.internet.defer import inlineCallbacks, returnValue
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
-
 import sqlalchemy as db
 
 class Component(ApplicationSession):
@@ -21,6 +21,22 @@ class Component(ApplicationSession):
 		res.close()
 		return row[0] 
 
+	def getObjData(self, name):
+		print("getObjData")
+		s = db.select([self.gpio]).where(self.gpio.c.name==name)
+		res = self.conn.execute(s)
+		obj_list = res.fetchone()
+		return dict(zip(self.gpio.c.keys(), obj_list))
+
+	def getObjGroup(self, group):
+		print("getObjGroup")
+		s = db.select([self.gpio]).where(self.gpio.c.group==group)
+		res = self.conn.execute(s)
+		objs = []
+		for row in res:
+			objs.append(dict(zip(self.gpio.c.keys(),row)))
+		return objs
+
 	@inlineCallbacks
 	def onJoin(self, details):
 		self.engine = db.create_engine("sqlite:///hardware.sqlite")
@@ -28,7 +44,6 @@ class Component(ApplicationSession):
 		self.metadata = db.MetaData()
 		self.gpio = db.Table('gpio', self.metadata, autoload=True, autoload_with=self.engine)
 		print("session attached")
-
 
 		yield self.register(self.getPinNumber, u'ch.db.getpinnumber')
 
@@ -52,6 +67,10 @@ class Component(ApplicationSession):
 				names.append(row[0])
 			return names
 		yield self.register(getAllNames, u'ch.db.getallnames')
+
+		yield self.register(self.getObjData, u'ch.db.getobjdata')
+		yield self.register(self.getObjGroup, u'ch.db.getobjgroup')
+
 
 if __name__ == '__main__':
 	url = u"ws://127.0.0.1:8080/ws"

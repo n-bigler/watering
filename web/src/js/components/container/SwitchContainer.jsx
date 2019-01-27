@@ -47,15 +47,18 @@ class SwitchContainer extends Component {
 		fetch(`http://192.168.1.104:5000/switch?name=${this.props.name}`,{
 			method: 'POST'
 		})
+	  		.then(response => response.text())
 			.then(
 				(result) => {
 					console.log(result)
+				  	if(result == "success"){
+						var toSet = "on"
+						this.state.state=="on" ? toSet = "off" : toSet = "on"
+						this.setState({ state: toSet });
+					}
 				}
 			);
 			
-		var toSet = "on"
-		this.state.state=="on" ? toSet = "off" : toSet = "on"
-		this.setState({ state: toSet });
 	}
 
 	render() {

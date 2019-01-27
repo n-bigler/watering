@@ -1,18 +1,20 @@
 
 import time
 from os import environ
+import pdb
 
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue
 import RPi.GPIO as GPIO
 
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.wamp.exception import ApplicationError
 
 
 class Component(ApplicationSession):
 
 	"""
-	An application component using the time service.
+	Manages the gpio on the raspberry pi
 	"""
 	def initGPIO(self, pins):
 		print("initializing gpio")
@@ -21,20 +23,43 @@ class Component(ApplicationSession):
 		for chan in pins:
 			GPIO.setup(chan, GPIO.OUT, initial=GPIO.HIGH)
 
+	def isRunning(self, pin):
+		return not GPIO.input(pin) 
+
+	def turnOn(self, pin):
+		GPIO.output(pin, GPIO.LOW)
+
+	def turnOff(self, pin):
+		GPIO.output(pin, GPIO.HIGH)
+
 	# Defining remote procedures
 	@inlineCallbacks
 	def switch(self, name):
-		print("switching")
-		def switchPin(pin):
-			GPIO.output(pin, not GPIO.input(pin))
-			if(GPIO.input(pin)):
-				print("pump off")
-				return "pump off"
-			print("pump on")
-			return "pump on"
-		print(name)
-		res = yield self.call(u"ch.db.getpinnumber", name)
-		returnValue(switchPin(res))
+
+		obj = yield self.call(u"ch.db.getobjdata", name)
+
+		shouldSwitch = False
+		if obj["type"] == "pump":
+			if self.isRunning(obj["id"]): #turning off pump: safe
+				shouldSwitch=True
+			else: #need to check if there is a valve open in the group
+				groupList = yield self.call(u"ch.db.getobjgroup", obj["group"])
+				for item in groupList:
+					if item["type"] == 'valve' and self.isRunning(item["id"]): #we are good
+						print("found at least one open valve")
+						shouldSwitch = True
+
+		else: #it's a valve
+			shouldSwitch=True
+			groupList = yield self.call(u"ch.db.getobjgroup", obj["group"])
+			for item in groupList:
+				if item["type"] == "pump" and self.isRunning(item["id"]):
+					shouldSwitch = False
+
+		if shouldSwitch:
+			GPIO.output(obj["id"], not GPIO.input(obj["id"]))
+			returnValue("success")
+		raise ApplicationError(u"ch.gpio.error1", "dangerous")
 
 	@inlineCallbacks
 	def getState(self, name):
