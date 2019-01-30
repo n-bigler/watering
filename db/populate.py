@@ -22,7 +22,10 @@ def populate(table):
 	engine.execute(gpio.insert(), id=11, name="valve1", 
 		description="pump1", type="valve", group=1)
 	engine.execute(gpio.insert(), id=13, name="valve2", 
-		description="pump1", type="valve", group=1)
+		description="pump1", type="valve", group=2)
+	engine.execute(gpio.insert(), id=15, name="pump2", 
+		description="pump2", type="pump", group=2)
+
 
 
 if __name__ == '__main__':
