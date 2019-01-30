@@ -41,7 +41,7 @@ class Component(ApplicationSession):
 		Returns:
 			bool: True if the device is powered. False otherwise
 		"""
-
+		print("in gpio.isrunning")
 		return not GPIO.input(pin) 
 
 	def turnOn(self, pin):
@@ -63,54 +63,24 @@ class Component(ApplicationSession):
 		GPIO.output(pin, GPIO.HIGH)
 
 	# Defining remote procedures
-	@inlineCallbacks
-	def switch(self, name):
-		"""Switches a specific device (on/off) if allowed
+	def switch(self, pin):
+		"""Switches a specific pin (on/off) 
 
-		If the device is on, it will turn it off, and vice versa.
-		Before blindly switching, the function checks if this is
-		allowed or if it could be dangerous. The rules are as follow.
-		
-		If the device is a pump, then we can switch it on only if there
-		is at least one open valve in the same group. A pump can always be
-		switched off.
-
-		If the device is a valve, then we can switch it on or off only if
-		there is no pump running in the same group.
+		This function doesn't check for security. It will switch in
+		any case.
 
 		Args:
 			name: The name of the device.
 
 		Returns:
-			(string): "success" if we could switch the device.
+			(string): "success" if we could switch the device. "error" otherwise.
 
-		Raises:
-			ApplicationError: If we were not allowed to switch the device.
 		"""
-		obj = yield self.call(u"ch.db.getobjdata", name)
-
-		shouldSwitch = False
-		if obj["type"] == "pump":
-			if self.isRunning(obj["id"]): #turning off pump: safe
-				shouldSwitch=True
-			else: #need to check if there is a valve open in the group
-				groupList = yield self.call(u"ch.db.getobjgroup", obj["group"])
-				for item in groupList:
-					if item["type"] == 'valve' and self.isRunning(item["id"]): #we are good
-						print("found at least one open valve")
-						shouldSwitch = True
-
-		else: #it's a valve
-			shouldSwitch=True
-			groupList = yield self.call(u"ch.db.getobjgroup", obj["group"])
-			for item in groupList:
-				if item["type"] == "pump" and self.isRunning(item["id"]):
-					shouldSwitch = False
-
-		if shouldSwitch:
-			GPIO.output(obj["id"], not GPIO.input(obj["id"]))
-			returnValue("success")
-		raise ApplicationError(u"ch.gpio.error1", "dangerous")
+		initial = GPIO.input(pin)
+		GPIO.output(pin, not initial)
+		if GPIO.input(pin) != initial:
+			return "success"
+		return "error"
 
 	@inlineCallbacks
 	def getState(self, name):
@@ -141,6 +111,7 @@ class Component(ApplicationSession):
 
 		yield self.register(self.switch, u"ch.gpio.switch")	
 		yield self.register(self.getState, u'ch.gpio.getstate')
+		yield self.register(self.isRunning, u'ch.gpio.isrunning')
 
 
 	def onDisconnect(self):

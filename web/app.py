@@ -32,7 +32,7 @@ def turnOnPump(request):
 	if(nameStr == 'noname'):
 		return "error"
 	try:
-		res = yield wampapp.session.call('ch.gpio.switch', nameStr)
+		res = yield wampapp.session.call('ch.device.switch', nameStr)
 	except ApplicationError as e:
 		print("call 2 error: {}".format(e))
 		print(e.error_message())
