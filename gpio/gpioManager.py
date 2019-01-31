@@ -11,6 +11,7 @@ from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 from autobahn.wamp.exception import ApplicationError
 
 
+
 class Component(ApplicationSession):
 	"""Manages the gpio on the raspberry pi.
 	This class handles all the switching and reading from
@@ -66,7 +67,7 @@ class Component(ApplicationSession):
 	def switch(self, pin):
 		"""Switches a specific pin (on/off) 
 
-		This function doesn't check for security. It will switch in
+		This function doesn't check for safety. It will switch in
 		any case.
 
 		Args:
@@ -79,6 +80,7 @@ class Component(ApplicationSession):
 		initial = GPIO.input(pin)
 		GPIO.output(pin, not initial)
 		if GPIO.input(pin) != initial:
+			self.publish(u"ch.watering.logging", {"msg":"switched pin {}".format(pin), "level": "debug"})
 			return "success"
 		return "error"
 

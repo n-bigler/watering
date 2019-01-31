@@ -72,8 +72,13 @@ class Component(ApplicationSession):
 
 		if shouldSwitch:
 			print("we should switch")
+			self.publish(u"ch.watering.logging", 
+				{'msg': 'Switching device {}'.format(device["name"]), 'level':'info'})
 			res = yield self.call(u"ch.gpio.switch", device["id"])
 			return res
+
+			self.publish(u"ch.watering.logging", 
+				{'msg': 'Cannot switch device {}'.format(device["name"]), 'level':'info'})
 
 		raise ApplicationError(u"ch.gpio.error1", "dangerous")
 
