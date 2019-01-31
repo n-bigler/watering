@@ -10,8 +10,22 @@ from autobahn.wamp.exception import ApplicationError
 
 
 class Component(ApplicationSession):
+	"""Handles the device management
+
+		A device is defined as any hardware connected on the GPIO
+		pins of the raspberry pi.
+	"""
 
 	def isRunning(self, devicePin):
+		"""Query if a device on a specific pin is running
+
+		Args:
+			devicePin: The pin which should be queried.
+
+		Returns:
+			A Deffered. 
+			Will resolve to True if the device is powered, false otherwise.
+		"""
 		res = self.call(u'ch.gpio.isrunning', devicePin)
 		return res
 
