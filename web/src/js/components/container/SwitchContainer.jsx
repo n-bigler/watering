@@ -21,10 +21,7 @@ class SwitchContainer extends Component {
 			.then(res => res.text())
 			.then(
 				(result) => {
-					console.log(result)
 					if(this._isMounted){
-						console.log("result:" )
-						console.log(result)
 						this.setState({state: result})
 					}
 				},
@@ -50,7 +47,6 @@ class SwitchContainer extends Component {
 	  		.then(response => response.text())
 			.then(
 				(result) => {
-					console.log(result)
 				  	if(result == "success"){
 						var toSet = "on"
 						this.state.state=="on" ? toSet = "off" : toSet = "on"
@@ -62,7 +58,6 @@ class SwitchContainer extends Component {
 	}
 
 	render() {
-		console.log(this.state)
 		return (
 			<Switch
 				text={this.props.name}
