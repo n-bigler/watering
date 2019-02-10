@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 const Switch = ({ text, id, value, name, handleClick }) => (
-	<div className="switch">
+	<div className="col-sm-2">
 		<button
 			type="button"
 			className={value=="on" ? "btn-success" : "btn-danger"}

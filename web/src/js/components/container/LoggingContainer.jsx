@@ -51,15 +51,16 @@ class LoggingContainer extends Component {
 	render() {
 		console.log(this.state)
 		return (
+			<div className="row justify-content-center mt-5">
 			<Logging
 				messages={this.state.messages}
 			/>
+			</div>
 		);
 	}
-}
+};
 
 
 export default LoggingContainer;
 
-const wrapper = document.getElementById("logging");
-wrapper ? ReactDOM.render(<LoggingContainer />, wrapper) : false;
+

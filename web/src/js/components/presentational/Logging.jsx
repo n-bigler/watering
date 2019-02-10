@@ -10,7 +10,11 @@ const Logging = ({ messages }) => {
 			);
 		}
 
-		return (<ul>{msgList}</ul>);
+		return (
+			<div className="col">
+				<ul>{msgList}</ul>
+			</div>
+		);
 };
 					
 Logging.propTypes = {

@@ -49,7 +49,7 @@ class SwitchGroupContainer extends Component {
 			);
 		}
 		return (
-			<div id="switchGroup"> 
+			<div id="switchGroup" className="row justify-content-center"> 
 				{switches}
 			</div>
 		);
@@ -58,5 +58,4 @@ class SwitchGroupContainer extends Component {
 
 export default SwitchGroupContainer;
 
-const wrapper = document.getElementById("switches");
-wrapper ? ReactDOM.render(<SwitchGroupContainer />, wrapper) : false;
+
