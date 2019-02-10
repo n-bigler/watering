@@ -37,12 +37,22 @@ class Component(ApplicationSession):
 			objs.append(dict(zip(self.gpio.c.keys(),row)))
 		return objs
 
+	def getAllProcesses(self):
+		print("getAllProcesses")
+		s = db.select([self.process])
+		res = self.conn.execute(s)
+		proc = []
+		for row in res:
+			proc.append(dict(zip(self.process.c.keys(),row)))
+		return proc
+
 	@inlineCallbacks
 	def onJoin(self, details):
 		self.engine = db.create_engine("sqlite:///hardware.sqlite")
 		self.conn = self.engine.connect()
 		self.metadata = db.MetaData()
 		self.gpio = db.Table('gpio', self.metadata, autoload=True, autoload_with=self.engine)
+		self.process = db.Table('process', self.metadata, autoload=True, autoload_with=self.engine)
 		print("session attached")
 
 		yield self.register(self.getPinNumber, u'ch.db.getpinnumber')
@@ -70,6 +80,7 @@ class Component(ApplicationSession):
 
 		yield self.register(self.getObjData, u'ch.db.getobjdata')
 		yield self.register(self.getObjGroup, u'ch.db.getobjgroup')
+		yield self.register(self.getAllProcesses, u'ch.db.getallprocesses')
 
 
 if __name__ == '__main__':

@@ -62,13 +62,30 @@ def getState(request):
 	res = yield wampapp.session.call('ch.gpio.getstate', nameStr)
 	returnValue(res)
 
+@app.route("/getallprocesses", methods=['GET'])
+@inlineCallbacks
+def getAllProcesses(request):
+	"""Returns all the processes stored in the database
+	Clean up the database result by removing the filename column.
+
+	Returns:
+		A json dump of all the row of the process database. The column
+		containing the filename has been removed.
+	"""
+
+	print("obtaining all processes")
+	res = yield wampapp.session.call('ch.db.getallprocesses')
+	print(res)
+	for row in res:
+		del row["filename"]
+	returnValue(json.dumps(res))
+
+
 
 if __name__ == "__main__":
 	import sys
-	from twisted.python import log
 	from twisted.web.server import Site
 	from twisted.internet import reactor
-	log.startLogging(sys.stdout)
 	reactor.listenTCP(5000, Site(app.resource()))
 	wampapp.run("ws://localhost:8080/ws", "realm1")
 
