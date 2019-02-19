@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import SwitchGroupContainer from '../container/SwitchGroupContainer.jsx';
 import ProcessesGroupContainer from '../container/ProcessesGroupContainer.jsx';
 import LoggingContainer from '../container/LoggingContainer.jsx';
+import WampContainer from '../container/WampContainer.jsx';
 import { Container, Grid, Header } from 'semantic-ui-react';
 
 const App = () => (
@@ -16,7 +17,13 @@ const App = () => (
 		<Header as='h2' dividing>
 			Logging
 		</Header>
-		<LoggingContainer />
+		<WampContainer 
+			url="ws://192.168.1.104:8080/ws"
+			realm="realm1"
+			channel="ch.watering.logging"
+			>
+				<LoggingContainer />
+		</WampContainer>
 		<Header as='h2' dividing>
 			Processes
 		</Header>

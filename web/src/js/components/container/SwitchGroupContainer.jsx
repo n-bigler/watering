@@ -37,6 +37,10 @@ class SwitchGroupContainer extends Component {
 		this._isMounted = false;
 	}
 
+	connectToWamp(ws){
+	
+	}
+
 	render() {
 		var switches = []
 		for(let it = 0; it < this.state.switches.length; it++){
