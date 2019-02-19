@@ -35,7 +35,11 @@ class ProcessContainer extends Component {
 		return (
 			<Grid.Column>
 				<p>{this.props.desc}</p>
-				<Button content={this.props.name} onClick={this.handleClick}/>
+				<Button 
+					content={this.props.name} 
+					onClick={this.handleClick}
+					key={this.props.name+"_buttonProcess"}
+				/>
 			</Grid.Column>
 		);
 	}
@@ -43,7 +47,6 @@ class ProcessContainer extends Component {
 
 ProcessContainer.propTypes = {
 	name: PropTypes.string.isRequired,
-	id: PropTypes.string.isRequired,
 	desc: PropTypes.string
 };
 

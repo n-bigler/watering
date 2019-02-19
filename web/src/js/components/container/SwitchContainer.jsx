@@ -65,6 +65,7 @@ class SwitchContainer extends Component {
 		return (
 			<Button
 				{...isOn}
+				key={this.props.name+"_button"}
 				content={this.props.name}
 				onClick={this.handleClick}
 			/>

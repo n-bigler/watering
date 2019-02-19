@@ -42,7 +42,7 @@ class ProcessesGroupContainer extends Component {
 			console.log(this.state.processes[it]);
 			processes.push(
 				<ProcessContainer
-					id={this.state.processes[it]['id']+"_ProcessesContainer"}
+					key={this.state.processes[it]['id']+"_ProcessesContainer"}
 					name={this.state.processes[it]['name']}	
 					desc={this.state.processes[it]['description']}
 				/>
