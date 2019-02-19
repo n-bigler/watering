@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import SwitchContainer from "./SwitchContainer.jsx";
+import { Grid } from "semantic-ui-react";
 
 class SwitchGroupContainer extends Component {
 	constructor() {
@@ -49,13 +50,12 @@ class SwitchGroupContainer extends Component {
 			);
 		}
 		return (
-			<div id="switchGroup" className="row justify-content-center"> 
+			<Grid.Row columns={switches.length>0?switches.length:1}> 
 				{switches}
-			</div>
+			</Grid.Row>
 		);
 	}
 }
 
 export default SwitchGroupContainer;
-
 

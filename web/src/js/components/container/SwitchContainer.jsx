@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
-import Switch from "../presentational/Switch.jsx";
+import { Button } from 'semantic-ui-react';
 import PropTypes from "prop-types";
 
 class SwitchContainer extends Component {
@@ -58,13 +58,15 @@ class SwitchContainer extends Component {
 	}
 
 	render() {
+		let isOn = {'negative': true};
+		if(this.state.state === "on"){
+			isOn = {'positive': true};
+		}
 		return (
-			<Switch
-				text={this.props.name}
-				id={this.props.name + "_Switch"}
-				name={this.props.name}
-				value={this.state.state}
-				handleClick={this.handleClick}
+			<Button
+				{...isOn}
+				content={this.props.name}
+				onClick={this.handleClick}
 			/>
 		);
 	}
@@ -76,6 +78,3 @@ SwitchContainer.propTypes = {
 };
 
 export default SwitchContainer;
-
-const wrapper = document.getElementById("switches");
-wrapper ? ReactDOM.render(<SwitchContainer />, wrapper) : false;
