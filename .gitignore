@@ -1,0 +1,14 @@
+# vim
+*.swp
+
+#db
+*.sqlite
+
+#python
+venv-*/
+
+#npm
+node_modulesnode_modules/
+#other
+*.log
+
