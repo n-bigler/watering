@@ -14,7 +14,7 @@ def populateGPIO(gpio):
 		description="pump2", type="pump", group=2)
 
 def populateProcess(proc):
-	engine.execute(proc.insert(), id=1, name="test", 
+	engine.execute(proc.insert(), name="test", 
 		description="this is a test process", filename='test.json')
 
 
