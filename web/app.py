@@ -32,7 +32,7 @@ def turnOnPump(request):
 	if(nameStr == 'noname'):
 		return "error"
 	try:
-		res = yield wampapp.session.call('ch.device.switch', nameStr)
+		res = yield wampapp.session.call('ch.device.switch', nameStr, None)
 	except ApplicationError as e:
 		print("call 2 error: {}".format(e))
 		print(e.error_message())
@@ -80,6 +80,24 @@ def getAllProcesses(request):
 		del row["filename"]
 	returnValue(json.dumps(res))
 
+@app.route("/launchprocess", methods=['POST'])
+@inlineCallbacks
+def launchProcess(request):
+	print("tries to launch process")
+	name = request.args.get(b'name', [b'noname'])[0]
+	nameStr = name.decode('utf-8')
+	print(nameStr)
+	if(nameStr == 'noname'):
+		return "error"
+	try:
+		res = yield wampapp.session.call('ch.process.launchprocess', nameStr)
+	except ApplicationError as e:
+		print("call 2 error: {}".format(e))
+		print(e.error_message())
+		request.setResponseCode(409)
+		returnValue([])
+
+	returnValue(res)
 
 
 if __name__ == "__main__":

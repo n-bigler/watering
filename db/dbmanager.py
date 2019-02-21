@@ -46,6 +46,13 @@ class Component(ApplicationSession):
 			proc.append(dict(zip(self.process.c.keys(),row)))
 		return proc
 
+	def getProcessData(self, name):
+		print("getProcessData")
+		s=db.select([self.process]).where(self.process.c.name == name)
+		res = self.conn.execute(s)
+		obj_list = res.fetchone()
+		return dict(zip(self.process.c.keys(), obj_list))
+
 	@inlineCallbacks
 	def onJoin(self, details):
 		self.engine = db.create_engine("sqlite:///hardware.sqlite")
@@ -81,6 +88,7 @@ class Component(ApplicationSession):
 		yield self.register(self.getObjData, u'ch.db.getobjdata')
 		yield self.register(self.getObjGroup, u'ch.db.getobjgroup')
 		yield self.register(self.getAllProcesses, u'ch.db.getallprocesses')
+		yield self.register(self.getProcessData, u'ch.db.getprocessdata')
 
 
 if __name__ == '__main__':

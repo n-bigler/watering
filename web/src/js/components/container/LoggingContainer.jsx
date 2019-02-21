@@ -24,8 +24,6 @@ class LoggingContainer extends Component {
 
 
 	static getDerivedStateFromProps(props, state){
-		console.log("in getDerivedState");
-		console.log(props.message);
 		if(props.message == null || props.message.level==='debug'){
 			return null;
 		}
@@ -76,7 +74,6 @@ class LoggingContainer extends Component {
 
 
 	render() {
-		console.log(this.state)
 		return (
 			<Logging
 				messages={this.state.messages}

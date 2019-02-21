@@ -1,6 +1,6 @@
-import uuid
 import time
 from os import environ
+import json
 
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue
@@ -16,22 +16,9 @@ class Component(ApplicationSession):
 		pins of the raspberry pi.
 	"""
 
-	def isRunning(self, devicePin):
-		"""Query if a device on a specific pin is running
-
-		Args:
-			devicePin: The pin which should be queried.
-
-		Returns:
-			A Deffered. 
-			Will resolve to True if the device is powered, false otherwise.
-		"""
-		res = self.call(u'ch.gpio.isrunning', devicePin)
-		return res
-
 	# Defining remote procedures
 	@inlineCallbacks
-	def switch(self, name, sessionID):
+	def switch(self, name, session_id):
 		"""Switches a specific device (on/off) if allowed
 
 		If the device is on, it will turn it off, and vice versa.
@@ -54,7 +41,7 @@ class Component(ApplicationSession):
 		Raises:
 			ApplicationError: If we were not allowed to switch the device.
 		"""
-		if(sessionID != self.sessionID):
+		if(session_id != this.session_id):
 			raise ApplicationError(u"ch.device.wrongSession", "wrong session")
 
 		device = yield self.call(u"ch.db.getobjdata", name)
@@ -82,10 +69,8 @@ class Component(ApplicationSession):
 
 		if shouldSwitch:
 			print("we should switch")
-				
 			self.publish(u"ch.watering.logging", 
-				{'type': 'switchingDevice', 'device': device["name"], 
-				'isOn': ("false" if running else "true"),
+					{'type': 'switchingDevice', 'device': device["name"], 'isOn': not running,
 				'msg': 'Switching device {}'.format(device["name"]), 
 				'level':'info'})
 		
@@ -97,18 +82,45 @@ class Component(ApplicationSession):
 
 		raise ApplicationError(u"ch.gpio.error1", "dangerous")
 
-	def requestSession(self):
-		if self.sessionID == None:
-			self.sessionID = str(uuid.uuid4())
-			return self.sessionID
+	@inlineCallbacks
+	def launchProcess(self, name):
+		if self.sessionID is not None:
+			raise ApplicationError(u"ch.process.sessionrunning", "session already running")
+		
 
-		return None
+		processDB = yield self.call(u"ch.db.getprocessdata", name)
+		process = None
+		with open("processes/"+processDB['filename']) as f:
+			filecontent = json.load(f)
+		if filecontent == None:
+			raise ApplicationError(u"ch.session.fileerror", "could not open process file")
 
-	def releaseSession(self, sessionID):
-		if self.sessionID == sessionID:
-			self.sessionID = None
-			return "success"
-		return "failure"
+		self.sessionID = yield self.call(u"ch.device.requestsession")
+		process = filecontent['process']
+		try:
+			if self.sessionID is not None:
+				print("doing something...")
+				for action in process:
+					if action['type'] == 'switch':
+						yield self.call(u"ch.device.switch", action['name'], self.sessionID)
+						time.sleep(0.5)
+					elif action['type'] == 'time':
+						time.sleep(action['duration'])
+				print("done.")
+		except ApplicationError as e:
+			print("Interrupting process")
+			print(e)
+		finally:
+			print("releasing session")
+			res = yield self.call(u"ch.device.releasesession", self.sessionID)
+			if res == "success":
+				self.sessionID = None
+			else:
+				raise ApplicationError(u"ch.process.releasesession", "could not release session")
+
+		returnValue("success")
+
+
 
 
 	@inlineCallbacks
@@ -119,9 +131,7 @@ class Component(ApplicationSession):
 		def error(e):
 			print(e)
 
-		yield self.register(self.switch, u"ch.device.switch")
-		yield self.register(self.requestSession, u"ch.device.requestsession")
-		yield self.register(self.releaseSession, u"ch.device.releasesession")
+		yield self.register(self.launchProcess, u"ch.process.launchprocess")	
 
 	def onDisconnect(self):
 		print("disconnected")

@@ -23,11 +23,7 @@ class SwitchContainer extends Component {
 	  		.then(response => response.text())
 			.then(
 				(result) => {
-				  	if(result == "success"){
-						var toSet = "on"
-						this.state.state=="on" ? toSet = "off" : toSet = "on"
-						this.setState({ state: toSet });
-					}
+					console.log(result);
 				}
 			);
 			
