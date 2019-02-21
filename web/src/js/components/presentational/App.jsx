@@ -12,7 +12,13 @@ const App = () => (
 			Switch
 		</Header>
 		<Grid centered>
-				<SwitchGroupContainer />
+			<WampContainer 
+				url="ws://192.168.1.104:8080/ws"
+				realm="realm1"
+				channel="ch.watering.logging"
+				>
+					<SwitchGroupContainer />
+			</WampContainer>
 		</Grid>
 		<Header as='h2' dividing>
 			Logging

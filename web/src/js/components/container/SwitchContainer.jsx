@@ -7,35 +7,11 @@ class SwitchContainer extends Component {
 	constructor(props) {
 		super(props);
 		this._isMounted = false;
-		this.state = {
-			state: "off"
-		};
-
 		this.handleClick = this.handleClick.bind(this);
-	}
-
-	getObjState(){
-		fetch(`http://192.168.1.104:5000/getstate?name=${this.props.name}`,{
-			method: "GET"
-		})
-			.then(res => res.text())
-			.then(
-				(result) => {
-					if(this._isMounted){
-						this.setState({state: result})
-					}
-				},
-				(error) => {
-					if(this._isMounted){
-						this.setState({error})
-					}
-				}
-			);
 	}
 
 	componentDidMount() {
 		this._isMounted = true;
-		this.getObjState();
 	}
 	componentWillUnmount(){
 		this._isMounted = false;
@@ -59,7 +35,7 @@ class SwitchContainer extends Component {
 
 	render() {
 		let isOn = {'negative': true};
-		if(this.state.state === "on"){
+		if(this.props.isOn){
 			isOn = {'positive': true};
 		}
 		return (

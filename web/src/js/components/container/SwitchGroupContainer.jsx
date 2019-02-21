@@ -18,12 +18,38 @@ class SwitchGroupContainer extends Component {
 		})
 			.then(res => res.json())
 			.then(
-				(result) => {
-					console.log(this._isMounted)
-						this.setState({switches: result})
+				(switchesName) => {
+					let promises = [];
+					for(let it=0; it<switchesName.length; it++){
+						let currName = switchesName[it];
+						promises.push(this.getDeviceState(currName));
+					}
+					Promise.all(promises).then((isOn) => {
+						let newSwitches = [];
+						for(let it=0; it<isOn.length; it++){
+							newSwitches.push({'name': switchesName[it], 
+								'isOn': isOn[it]});
+						}
+						this.setState({switches: newSwitches});
+					});
 				},
 				(error) => {
 						this.setState({error})
+				}
+			);
+	}
+
+	getDeviceState(name){
+		return fetch(`http://192.168.1.104:5000/getstate?name=${name}`,{
+			method: "GET"
+		})
+			.then(res => res.text())
+			.then(
+				(result) => {
+					return (result==='on'?true:false);
+				},
+				(error) => {
+					return error;
 				}
 			);
 	}
@@ -37,19 +63,23 @@ class SwitchGroupContainer extends Component {
 		this._isMounted = false;
 	}
 
-	connectToWamp(ws){
-	
+static getDerivedStateFromProps(props, state){
+	if(props.message != null && props.message.type === 'switchingDevice'){
+		let newState = state;
+		let device = state.switches.filter((s) => s.name === props.message.device)[0];
+		return newState;
 	}
-
+	return null;
+}
 	render() {
 		var switches = []
 		for(let it = 0; it < this.state.switches.length; it++){
-			console.log(this.state.switches)
 			switches.push(
 				<SwitchContainer
-					id={this.state.switches[it]+"_SwitchContainer"}
-					key={this.state.switches[it]+"_SwitchContainer"}
-					name={this.state.switches[it]}	
+					id={this.state.switches[it]['name']+"_SwitchContainer"}
+					key={this.state.switches[it]['name']+"_SwitchContainer"}
+					name={this.state.switches[it]['name']}
+					isOn={this.state.switches[it]['isOn']}
 				/>
 			);
 		}
