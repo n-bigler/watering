@@ -11,6 +11,8 @@ tmux split-window -v
 tmux send-keys 'cd devices && source venv-device/bin/activate && python deviceManager.py' Enter
 tmux split-window -h 
 tmux send-keys 'cd logger && source venv-logger/bin/activate && python logger.py' Enter
+tmux split-window -h 
+tmux send-keys 'cd process && source venv-process/bin/activate && python processManager.py' Enter
 tmux select-layout tiled
 tmux new-window 
 tmux rename-window 'web'
