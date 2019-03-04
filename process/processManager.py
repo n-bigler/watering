@@ -1,6 +1,8 @@
+import threading
 import time
 from os import environ
 import json
+import schedule
 
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue
@@ -9,79 +11,48 @@ from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 from autobahn.wamp.exception import ApplicationError
 
 
-class Component(ApplicationSession):
-	"""Handles the device management
 
-		A device is defined as any hardware connected on the GPIO
-		pins of the raspberry pi.
+class Component(ApplicationSession):
+	"""Handles the processes management
 	"""
+	def testTimer(self):
+		print("testing the timer")
+
+	class ScheduleThread(threading.Thread):
+		def __init__(self, delay):
+			threading.Thread.__init__(self)
+			self.cease_running = threading.Event()
+			self.delay = delay
+		def getStopper(self):
+			return self.cease_running
+		def run(self):
+			while not self.cease_running.is_set():
+				print(schedule.jobs)
+				schedule.run_pending()
+				time.sleep(self.delay)
+
+	def startScheduleThread(self):
+		continuous_thread = self.ScheduleThread(1)
+		self.cease_running = continuous_thread.getStopper()
+		continuous_thread.start()
+
+	def stopScheduleThread(self):
+		self.cease_running.set() 
+
+
+	def setTimer(self, name, t):
+		print(time.strftime("%H:%M", t))
+		schedule.every().day.at(time.strftime("%H:%M", t)).do(self.launchProcess, name)
+
+	@inlineCallbacks
+	def setAllTimers(self):
+		allTimers = yield self.call(u"ch.db.getalltimers")
+		for timer in allTimers:
+			t = time.strptime(timer['time'], "%H:%M:%S")
+			print(t)
+			self.setTimer(timer['process'], t)
 
 	# Defining remote procedures
-	@inlineCallbacks
-	def switch(self, name, session_id):
-		"""Switches a specific device (on/off) if allowed
-
-		If the device is on, it will turn it off, and vice versa.
-		Before blindly switching, the function checks if this is
-		allowed or if it could be dangerous. The rules are as follow.
-		
-		If the device is a pump, then we can switch it on only if there
-		is at least one open valve in the same group. A pump can always be
-		switched off.
-
-		If the device is a valve, then we can switch it on or off only if
-		there is no pump running in the same group.
-
-		Args:
-			name: The name of the device.
-
-		Returns:
-			(string): "success" if we could switch the device.
-
-		Raises:
-			ApplicationError: If we were not allowed to switch the device.
-		"""
-		if(session_id != this.session_id):
-			raise ApplicationError(u"ch.device.wrongSession", "wrong session")
-
-		device = yield self.call(u"ch.db.getobjdata", name)
-
-		shouldSwitch = False
-		running = yield self.isRunning(device["id"])
-
-		if device["type"] == "pump":
-			if running == True: #turning off pump: safe
-				shouldSwitch=True
-			else: #need to check if there is a valve open in the group
-				groupList = yield self.call(u"ch.db.getobjgroup", device["group"])
-				for item in groupList:
-					res = yield self.isRunning(item["id"])
-					if item["type"] == 'valve' and res == True:
-						shouldSwitch = True
-
-		else: #it's a valve
-			shouldSwitch=True
-			groupList = yield self.call(u"ch.db.getobjgroup", device["group"])
-			for item in groupList:
-				res = yield self.isRunning(item["id"])
-				if item["type"] == "pump" and res == True:
-					shouldSwitch = False
-
-		if shouldSwitch:
-			print("we should switch")
-			self.publish(u"ch.watering.logging", 
-					{'type': 'switchingDevice', 'device': device["name"], 'isOn': not running,
-				'msg': 'Switching device {}'.format(device["name"]), 
-				'level':'info'})
-		
-			res = yield self.call(u"ch.gpio.switch", device["id"])
-			return res
-
-			self.publish(u"ch.watering.logging", 
-				{'msg': 'Cannot switch device {}'.format(device["name"]), 'level':'info'})
-
-		raise ApplicationError(u"ch.gpio.error1", "dangerous")
-
 	@inlineCallbacks
 	def launchProcess(self, name):
 		if self.sessionID is not None:
@@ -120,9 +91,6 @@ class Component(ApplicationSession):
 
 		returnValue("success")
 
-
-
-
 	@inlineCallbacks
 	def onJoin(self, details):
 		print("session attached")
@@ -131,9 +99,13 @@ class Component(ApplicationSession):
 		def error(e):
 			print(e)
 
+		self.startScheduleThread()
+		self.setAllTimers()
 		yield self.register(self.launchProcess, u"ch.process.launchprocess")	
 
 	def onDisconnect(self):
+		print("stopping scheduler")
+		self.stopScheduleThread()
 		print("disconnected")
 		reactor.stop()
 

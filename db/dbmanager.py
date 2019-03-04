@@ -21,29 +21,30 @@ class Component(ApplicationSession):
 		res.close()
 		return row[0] 
 
-	def getObjData(self, name):
-		print("getObjData")
+	def getDeviceData(self, name):
+		print("getDeviceData")
 		s = db.select([self.gpio]).where(self.gpio.c.name==name)
 		res = self.conn.execute(s)
 		obj_list = res.fetchone()
+		res.close()
 		return dict(zip(self.gpio.c.keys(), obj_list))
 
-	def getObjGroup(self, group):
-		print("getObjGroup")
+	def getDeviceGroup(self, group):
+		print("getDeviceGroup")
 		s = db.select([self.gpio]).where(self.gpio.c.group==group)
 		res = self.conn.execute(s)
 		objs = []
 		for row in res:
 			objs.append(dict(zip(self.gpio.c.keys(),row)))
+		res.close()
 		return objs
 
 	def getAllProcesses(self):
 		print("getAllProcesses")
 		s = db.select([self.process])
 		res = self.conn.execute(s)
-		proc = []
-		for row in res:
-			proc.append(dict(zip(self.process.c.keys(),row)))
+		proc = self.queryResultsToList(self.process.c.keys(), res)
+		res.close()
 		return proc
 
 	def getProcessData(self, name):
@@ -51,7 +52,25 @@ class Component(ApplicationSession):
 		s=db.select([self.process]).where(self.process.c.name == name)
 		res = self.conn.execute(s)
 		obj_list = res.fetchone()
+		res.close()
 		return dict(zip(self.process.c.keys(), obj_list))
+
+	def queryResultsToList(self,tableHeaders, queryResults):
+		resultList = []
+		for row in queryResults:
+			print(row)
+			resultList.append(dict(zip(tableHeaders, row)))
+		return resultList
+		
+	def getAllTimers(self):
+		print("getAllTimers")
+		s=db.select([self.timer])
+		res = self.conn.execute(s)
+		allTimers = self.queryResultsToList(self.timer.c.keys(), res)
+		print(allTimers)
+		res.close()
+		return allTimers
+
 
 	@inlineCallbacks
 	def onJoin(self, details):
@@ -60,6 +79,7 @@ class Component(ApplicationSession):
 		self.metadata = db.MetaData()
 		self.gpio = db.Table('gpio', self.metadata, autoload=True, autoload_with=self.engine)
 		self.process = db.Table('process', self.metadata, autoload=True, autoload_with=self.engine)
+		self.timer = db.Table('timer', self.metadata, autoload=True, autoload_with=self.engine)
 		print("session attached")
 
 		yield self.register(self.getPinNumber, u'ch.db.getpinnumber')
@@ -71,6 +91,7 @@ class Component(ApplicationSession):
 			pins = []
 			for row in res:
 				pins.append(row[0])
+			res.close()
 			return pins 
 
 		yield self.register(getAllPinouts, u'ch.db.getallpinouts')
@@ -85,10 +106,11 @@ class Component(ApplicationSession):
 			return names
 		yield self.register(getAllNames, u'ch.db.getallnames')
 
-		yield self.register(self.getObjData, u'ch.db.getobjdata')
-		yield self.register(self.getObjGroup, u'ch.db.getobjgroup')
+		yield self.register(self.getDeviceData, u'ch.db.getdevicedata')
+		yield self.register(self.getDeviceGroup, u'ch.db.getdevicegroup')
 		yield self.register(self.getAllProcesses, u'ch.db.getallprocesses')
 		yield self.register(self.getProcessData, u'ch.db.getprocessdata')
+		yield self.register(self.getAllTimers, u'ch.db.getalltimers')
 
 
 if __name__ == '__main__':

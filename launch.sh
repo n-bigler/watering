@@ -5,7 +5,7 @@ tmux rename-window 'editor'
 tmux new-window 
 tmux rename-window 'services'
 tmux send-keys 'cd db && source venv-db/bin/activate && python dbmanager.py' Enter
-sleep 1
+	sleep 1
 tmux split-window -h 
 tmux send-keys 'cd gpio && source venv-gpio/bin/activate && python gpioManager.py' Enter
 tmux split-window -v 
