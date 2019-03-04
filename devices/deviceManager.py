@@ -57,7 +57,7 @@ class Component(ApplicationSession):
 		if(sessionID != self.sessionID):
 			raise ApplicationError(u"ch.device.wrongSession", "wrong session")
 
-		device = yield self.call(u"ch.db.getobjdata", name)
+		device = yield self.call(u"ch.db.getdevicedata", name)
 
 		shouldSwitch = False
 		running = yield self.isRunning(device["id"])
@@ -66,7 +66,7 @@ class Component(ApplicationSession):
 			if running == True: #turning off pump: safe
 				shouldSwitch=True
 			else: #need to check if there is a valve open in the group
-				groupList = yield self.call(u"ch.db.getobjgroup", device["group"])
+				groupList = yield self.call(u"ch.db.getdevicegroup", device["group"])
 				for item in groupList:
 					res = yield self.isRunning(item["id"])
 					if item["type"] == 'valve' and res == True:
@@ -74,8 +74,8 @@ class Component(ApplicationSession):
 
 		else: #it's a valve
 			shouldSwitch=True
-			groupList = yield self.call(u"ch.db.getobjgroup", device["group"])
-			for item in groupList:
+			inSameGroup = yield self.call(u"ch.db.getdevicegroup", device["group"])
+			for item in inSameGroup:
 				res = yield self.isRunning(item["id"])
 				if item["type"] == "pump" and res == True:
 					shouldSwitch = False
