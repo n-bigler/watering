@@ -63,15 +63,16 @@ class SwitchGroupContainer extends Component {
 		this._isMounted = false;
 	}
 
-static getDerivedStateFromProps(props, state){
-	if(props.message != null && props.message.type === 'switchingDevice'){
-		let newState = state;
-		let device = state.switches.filter((s) => s.name === props.message.device)[0];
-		device.isOn = props.message.isOn === "true"?true:false;
-		return newState;
+	static getDerivedStateFromProps(props, state){
+		if(props.message != null && props.message.type === 'switchingDevice'){
+			let newState = state;
+			let device = state.switches.filter((s) => s.name === props.message.device)[0];
+			device.isOn = props.message.isOn === "true"?true:false;
+			return newState;
+		}
+		return null;
 	}
-	return null;
-}
+
 	render() {
 		var switches = []
 		for(let it = 0; it < this.state.switches.length; it++){

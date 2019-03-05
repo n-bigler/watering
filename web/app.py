@@ -80,6 +80,20 @@ def getAllProcesses(request):
 		del row["filename"]
 	returnValue(json.dumps(res))
 
+@app.route("/getalltimers", methods=['GET'])
+@inlineCallbacks
+def getAllTimers(request):
+	"""Returns all the timers stored in the database
+
+	Returns:
+		A json dump of all the row of the timer table.
+	"""
+
+	res = yield wampapp.session.call('ch.db.getalltimers')
+
+	returnValue(json.dumps(res))
+
+
 @app.route("/launchprocess", methods=['POST'])
 @inlineCallbacks
 def launchProcess(request):
@@ -99,6 +113,46 @@ def launchProcess(request):
 
 	returnValue(res)
 
+@app.route("/addtimer", methods=['POST'])
+@inlineCallbacks
+def addTimer(request):
+	print("Adds a new timer")
+	time = request.args.get(b'time', [b'notime'])[0]
+	timeStr = time.decode('utf-8')
+	print(timeStr)
+	process = request.args.get(b'process', [b'noprocess'])[0]
+	processStr = process.decode('utf-8')
+	print(process)
+	if(timeStr == 'noprocess' or timeStr == 'notime'):
+		return "error"
+	try:
+		res = yield wampapp.session.call('ch.process.addtimer', timeStr, processStr)
+	except ApplicationError as e:
+		print("call 2 error: {}".format(e))
+		print(e.error_message())
+		request.setResponseCode(409)
+		returnValue([])
+
+	returnValue(res)
+
+@app.route("/deletetimer", methods=['DELETE'])
+@inlineCallbacks
+def deleteTimer(request):
+	print("Delete a timer")
+	time = request.args.get(b'time', [b'notime'])[0]
+	timeStr = time.decode('utf-8')
+	print(timeStr)
+	if(timeStr == 'notime'):
+		return "error"
+	try:
+		res = yield wampapp.session.call('ch.process.deletetimer', timeStr)
+	except ApplicationError as e:
+		print("call 2 error: {}".format(e))
+		print(e.error_message())
+		request.setResponseCode(409)
+		returnValue([])
+
+	returnValue(res)
 
 if __name__ == "__main__":
 	import sys

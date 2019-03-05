@@ -32,7 +32,7 @@ class Component(ApplicationSession):
 				time.sleep(self.delay)
 
 	def startScheduleThread(self):
-		continuous_thread = self.ScheduleThread(1)
+		continuous_thread = self.ScheduleThread(20)
 		self.cease_running = continuous_thread.getStopper()
 		continuous_thread.start()
 
@@ -51,6 +51,11 @@ class Component(ApplicationSession):
 			t = time.strptime(timer['time'], "%H:%M:%S")
 			print(t)
 			self.setTimer(timer['process'], t)
+
+	def removeAllTimers(self):
+		for job in schedule.jobs:
+			schedule.cancel_job(job)
+		print("After deleting jobs: {}".format(schedule.jobs))
 
 	# Defining remote procedures
 	@inlineCallbacks
@@ -92,6 +97,24 @@ class Component(ApplicationSession):
 		returnValue("success")
 
 	@inlineCallbacks
+	def addTimer(self, theTime, process):
+		t = time.strptime(theTime,"%H:%M")
+		resDB = yield self.call(u"ch.db.addtimer", time.strftime("%H:%M:%S", t), process)
+		if resDB is not None:
+			self.removeAllTimers()
+			self.setAllTimers()
+		return resDB
+
+	@inlineCallbacks
+	def deleteTimer(self, theTime):
+		t = time.strptime(theTime,"%H:%M:%S")
+		resDB = yield self.call(u"ch.db.deletetimer", time.strftime("%H:%M:%S", t))
+		if resDB is not None:
+			self.removeAllTimers()
+			self.setAllTimers()
+		return resDB
+
+	@inlineCallbacks
 	def onJoin(self, details):
 		print("session attached")
 		self.sessionID = None;
@@ -102,6 +125,8 @@ class Component(ApplicationSession):
 		self.startScheduleThread()
 		self.setAllTimers()
 		yield self.register(self.launchProcess, u"ch.process.launchprocess")	
+		yield self.register(self.addTimer, u"ch.process.addtimer")
+		yield self.register(self.deleteTimer, u"ch.process.deletetimer")
 
 	def onDisconnect(self):
 		print("stopping scheduler")

@@ -70,7 +70,37 @@ class Component(ApplicationSession):
 		print(allTimers)
 		res.close()
 		return allTimers
+	
+	def addTimer(self, theTime, processName):
+		#First, we check if the process exists
+		allProcesses = self.getAllProcesses(); 
+		found = False
+		for process in allProcesses:
+			if process['name'] == processName:
+				found = True
+		if found == False: #if the process does not exist
+			print("process does not exist, can't add a timer")
+			return None
+		
+		#if it exists, then we add the timer to the database
+		try:
+			self.conn.execute(self.timer.insert(), time=theTime, 
+				process=processName);
+		except db.exc.DBAPIError as e:
+			print(e)
+			print("could not add to db")
+			return None
+		return self.getAllTimers()
 
+
+	def deleteTimer(self, theTime):
+		print("deleting timer")
+		try:
+			self.conn.execute(self.timer.delete().where(self.timer.c.time==theTime))
+		except db.exc.DBAPIError as e:
+			print(e)
+			print("could not delete from db")
+			return None
 
 	@inlineCallbacks
 	def onJoin(self, details):
@@ -83,6 +113,8 @@ class Component(ApplicationSession):
 		print("session attached")
 
 		yield self.register(self.getPinNumber, u'ch.db.getpinnumber')
+		yield self.register(self.addTimer, u'ch.db.addtimer')
+		yield self.register(self.deleteTimer, u'ch.db.deletetimer')
 
 		def getAllPinouts():
 			print("retrieving all pins")

@@ -4,7 +4,11 @@ import SwitchGroupContainer from '../container/SwitchGroupContainer.jsx';
 import ProcessesGroupContainer from '../container/ProcessesGroupContainer.jsx';
 import LoggingContainer from '../container/LoggingContainer.jsx';
 import WampContainer from '../container/WampContainer.jsx';
-import { Container, Grid, Header } from 'semantic-ui-react';
+import GroupContainer from '../container/GroupContainer.jsx';
+import ProcessContainer from '../container/ProcessContainer.jsx';
+import TimerContainer from '../container/TimerContainer.jsx';
+import AddTimerContainer from '../container/AddTimerContainer.jsx';
+import { Container, Grid, Header, Button, Icon} from 'semantic-ui-react';
 
 const App = () => (
 	<Container style={{ marginTop: '3em' }}>
@@ -34,8 +38,20 @@ const App = () => (
 			Processes
 		</Header>
 		<Grid centered>
-			<ProcessesGroupContainer />
+			<GroupContainer url="http://192.168.1.104:5000/getallprocesses">
+				<ProcessContainer name='' description=''/>
+			</GroupContainer>
 		</Grid>
+		<Header as='h2' dividing>
+			Timer
+		</Header>
+		<Grid centered>
+			<GroupContainer url="http://192.168.1.104:5000/getalltimers">
+				<TimerContainer time='' process=''/>
+			</GroupContainer>
+			<AddTimerContainer/>
+		</Grid>
+
 	</Container>
 )
 

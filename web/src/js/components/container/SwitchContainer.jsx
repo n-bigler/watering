@@ -8,6 +8,7 @@ class SwitchContainer extends Component {
 		super(props);
 		this._isMounted = false;
 		this.handleClick = this.handleClick.bind(this);
+		console.log(this.props);
 	}
 
 	componentDidMount() {
@@ -28,6 +29,7 @@ class SwitchContainer extends Component {
 			);
 			
 	}
+
 
 	render() {
 		let isOn = {'negative': true};

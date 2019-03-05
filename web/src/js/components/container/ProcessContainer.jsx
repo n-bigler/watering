@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import PropTypes from "prop-types";
-import {Button, Grid} from "semantic-ui-react";
+import {Button, Grid, Card, Input} from "semantic-ui-react";
 
 class ProcessContainer extends Component {
 	constructor(props) {
@@ -14,6 +14,8 @@ class ProcessContainer extends Component {
 	}
 	componentWillUnmount(){
 	}
+
+
 	handleClick(event) {
 		console.log("clicked");
 		fetch(`http://192.168.1.104:5000/launchprocess?name=${this.props.name}`,{
@@ -30,12 +32,21 @@ class ProcessContainer extends Component {
 	render() {
 		return (
 			<Grid.Column>
-				<p>{this.props.desc}</p>
-				<Button 
-					content={this.props.name} 
-					onClick={this.handleClick}
-					key={this.props.name+"_buttonProcess"}
-				/>
+			<Card>
+				<Card.Content>
+					<Card.Header>{this.props.name}</Card.Header>
+					<Card.Description>{this.props.description}</Card.Description>
+				</Card.Content>
+				<Card.Content extra>
+					<Button 
+						content="Start"
+						icon="play"
+						labelPosition='left'
+						onClick={this.handleClick}
+						key={this.props.name+"_buttonProcess"}
+					/>
+				</Card.Content>
+			</Card>
 			</Grid.Column>
 		);
 	}
@@ -43,7 +54,7 @@ class ProcessContainer extends Component {
 
 ProcessContainer.propTypes = {
 	name: PropTypes.string.isRequired,
-	desc: PropTypes.string
+	description: PropTypes.string
 };
 
 export default ProcessContainer;
