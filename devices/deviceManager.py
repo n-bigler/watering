@@ -7,31 +7,29 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 from autobahn.wamp.exception import ApplicationError
+from device import Device
 
-
-class Component(ApplicationSession):
+class DeviceManager(ApplicationSession):
 	"""Handles the device management
 
 		A device is defined as any hardware connected on the GPIO
 		pins of the raspberry pi.
 	"""
-
-	def isRunning(self, devicePin):
-		"""Query if a device on a specific pin is running
-
-		Args:
-			devicePin: The pin which should be queried.
-
-		Returns:
-			A Deffered. 
-			Will resolve to True if the device is powered, false otherwise.
-		"""
-		res = self.call(u'ch.gpio.isrunning', devicePin)
-		return res
-
-	# Defining remote procedures
 	@inlineCallbacks
-	def switch(self, name, sessionID):
+	def onJoin(self, details):
+		print("session attached")
+		self.sessionID = None;
+
+		def error(e):
+			print(e)
+
+		yield self.register(self.switchIfAllowed, u"ch.device.switch")
+		yield self.register(self.requestSession, u"ch.device.requestsession")
+		yield self.register(self.releaseSession, u"ch.device.releasesession")
+
+
+	@inlineCallbacks
+	def switchIfAllowed(self, name, sessionID):
 		"""Switches a specific device (on/off) if allowed
 
 		If the device is on, it will turn it off, and vice versa.
@@ -57,51 +55,86 @@ class Component(ApplicationSession):
 		if(sessionID != self.sessionID):
 			raise ApplicationError(u"ch.device.wrongSession", "wrong session")
 
-		device = yield self.call(u"ch.db.getdevicedata", name)
+		device = yield self.getDeviceFromName(name)
+		switchAllowed = yield self.isSwitchAllowed(device)
+		if switchAllowed == True:
+			switched = yield self.switch(device)
+			return switched
 
-		shouldSwitch = False
-		running = yield self.isRunning(device["id"])
-
-		if device["type"] == "pump":
-			if running == True: #turning off pump: safe
-				shouldSwitch=True
-			else: #need to check if there is a valve open in the group
-				groupList = yield self.call(u"ch.db.getdevicegroup", device["group"])
-				for item in groupList:
-					res = yield self.isRunning(item["id"])
-					if item["type"] == 'valve' and res == True:
-						shouldSwitch = True
-
-		else: #it's a valve
-			shouldSwitch=True
-			inSameGroup = yield self.call(u"ch.db.getdevicegroup", device["group"])
-			for item in inSameGroup:
-				res = yield self.isRunning(item["id"])
-				if item["type"] == "pump" and res == True:
-					shouldSwitch = False
-
-		if shouldSwitch:
-			print("we should switch")
-				
-			self.publish(u"ch.watering.logging", 
-				{'type': 'switchingDevice', 'device': device["name"], 
-				'isOn': ("false" if running else "true"),
-				'msg': 'Switching device {}'.format(device["name"]), 
-				'level':'info'})
-		
-			res = yield self.call(u"ch.gpio.switch", device["id"])
-			return res
-
-			self.publish(u"ch.watering.logging", 
-				{'msg': 'Cannot switch device {}'.format(device["name"]), 'level':'info'})
-
+		self.publish(u"ch.watering.logging", 
+			{'msg': 'Cannot switch device {}'.format(device.name), 'level':'info'})
 		raise ApplicationError(u"ch.gpio.error1", "dangerous")
+
+	@inlineCallbacks
+	def getDeviceFromName(self, name):
+		deviceQuery = yield self.call(u"ch.db.getdevicedata", name)
+		return Device.fromDict(deviceQuery)
+
+	@inlineCallbacks
+	def isSwitchAllowed(self, device):
+		running = self.isRunning(device)
+		if device.type == "pump":
+			if running == True: #turning off pump: safe
+				return True
+			else: #need to check if there is a valve open in the group
+				hasOpenedValve = yield self.groupHasOpenedValve(device.group)
+				return hasOpenedValve
+		else: #it's a valve
+			hasRunningPump = yield self.groupHasRunningPump(device.group)
+			if(hasRunningPump == True):
+				return False
+			return True
+		return False
+
+	@inlineCallbacks
+	def groupHasOpenedValve(self, group):
+		groupList = yield self.call(u"ch.db.getdevicegroup", group)
+		for item in groupList:
+			currDevice = Device.fromDict(item)
+			currDeviceRunning = yield self.isRunning(currDevice)
+			if currDevice.type == 'valve' and currDeviceRunning == True:
+				return True
+		return False
+	
+	@inlineCallbacks
+	def groupHasRunningPump(self, group):
+		groupList = yield self.call(u"ch.db.getdevicegroup", group)
+		for item in groupList:
+			currDevice = Device.fromDict(item)
+			currDeviceRunning = yield self.isRunning(currDevice)
+			if currDevice.type == 'pump' and currDeviceRunning == True:
+				return True
+		return False
+
+
+	@inlineCallbacks
+	def switch(self, device):
+		running = yield self.isRunning(device)
+		self.publish(u"ch.watering.logging", 
+			{'type': 'switchingDevice', 'device': device.name, 
+			'isOn': ("false" if running else "true"),
+			'msg': 'Switching device {}'.format(device.name), 
+			'level':'info'})
+		res = yield self.call(u"ch.gpio.switch", device.id)
+		return res
+
+	def isRunning(self, device):
+		"""Query if a specific device is running
+
+		Args:
+			device: The device which should be queried.
+
+		Returns:
+			A Deffered. 
+			Will resolve to True if the device is powered, false otherwise.
+		"""
+		res = self.call(u'ch.gpio.isrunning', device.id)
+		return res
 
 	def requestSession(self):
 		if self.sessionID == None:
 			self.sessionID = str(uuid.uuid4())
 			return self.sessionID
-
 		return None
 
 	def releaseSession(self, sessionID):
@@ -111,17 +144,6 @@ class Component(ApplicationSession):
 		return "failure"
 
 
-	@inlineCallbacks
-	def onJoin(self, details):
-		print("session attached")
-		self.sessionID = None;
-
-		def error(e):
-			print(e)
-
-		yield self.register(self.switch, u"ch.device.switch")
-		yield self.register(self.requestSession, u"ch.device.requestsession")
-		yield self.register(self.releaseSession, u"ch.device.releasesession")
 
 	def onDisconnect(self):
 		print("disconnected")
@@ -133,4 +155,4 @@ if __name__ == '__main__':
 	realm = u"realm1"
 	runner = ApplicationRunner(url, realm)
 	print("here")
-	runner.run(Component)
+	runner.run(DeviceManager)
