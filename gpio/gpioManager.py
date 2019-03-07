@@ -12,7 +12,7 @@ from autobahn.wamp.exception import ApplicationError
 
 
 
-class Component(ApplicationSession):
+class GPIOManager(ApplicationSession):
 	"""Manages the gpio on the raspberry pi.
 	This class handles all the switching and reading from
 	the Raspberry pi gpio.
@@ -126,4 +126,4 @@ if __name__ == '__main__':
 	realm = u"realm1"
 	runner = ApplicationRunner(url, realm)
 	print("here")
-	runner.run(Component)
+	runner.run(GPIOManager)
