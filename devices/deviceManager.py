@@ -3,7 +3,7 @@ import time
 from os import environ
 
 from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks, returnValue, CancelledError
 
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 from autobahn.wamp.exception import ApplicationError
@@ -54,8 +54,14 @@ class DeviceManager(ApplicationSession):
 		"""
 		if(sessionID != self.sessionID):
 			raise ApplicationError(u"ch.device.wrongSession", "wrong session")
+		# we need to loop because it might happen that we get a cancellederror. Ugly...
+		device = None
+		while(device is None):
+			try:
+				device = yield self.getDeviceFromName(name)
+			except CancelledError as e:
+				print("We are here, what to do...?")
 
-		device = yield self.getDeviceFromName(name)
 		switchAllowed = yield self.isSwitchAllowed(device)
 		if switchAllowed == True:
 			switched = yield self.switch(device)
@@ -113,9 +119,12 @@ class DeviceManager(ApplicationSession):
 		self.publish(u"ch.watering.logging", 
 			{'type': 'switchingDevice', 'device': device.name, 
 			'isOn': ("false" if running else "true"),
-			'msg': 'Switching device {}'.format(device.name), 
+			'msg': 'Switching device {0}. It is now {1}'.format(device.name, ("off" if running else "on")), 
 			'level':'info'})
-		res = yield self.call(u"ch.gpio.switch", device.id)
+		try:
+			res = yield self.call(u"ch.gpio.switch", device.id)
+		except CancelledError as e:
+			print("We are here, what to do?")
 		return res
 
 	def isRunning(self, device):

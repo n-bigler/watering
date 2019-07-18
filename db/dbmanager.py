@@ -5,6 +5,7 @@ import pdb
 from twisted.internet.defer import inlineCallbacks, returnValue
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.wamp.exception import ProtocolError
 import sqlalchemy as db
 
 class Component(ApplicationSession):
@@ -22,12 +23,16 @@ class Component(ApplicationSession):
 		return row[0] 
 
 	def getDeviceData(self, name):
-		print("getDeviceData")
-		s = db.select([self.gpio]).where(self.gpio.c.name==name)
-		res = self.conn.execute(s)
-		obj_list = res.fetchone()
-		res.close()
-		return dict(zip(self.gpio.c.keys(), obj_list))
+		try:
+			print("getDeviceData")
+			s = db.select([self.gpio]).where(self.gpio.c.name==name)
+			res = self.conn.execute(s)
+			obj_list = res.fetchone()
+			res.close()
+			return dict(zip(self.gpio.c.keys(), obj_list))
+		except ProtocolError as e: 
+			print("let's not die...")
+			return 0
 
 	def getDeviceGroup(self, group):
 		print("getDeviceGroup")
@@ -101,6 +106,7 @@ class Component(ApplicationSession):
 			print(e)
 			print("could not delete from db")
 			return None
+		return "success"
 
 	@inlineCallbacks
 	def onJoin(self, details):
@@ -144,6 +150,8 @@ class Component(ApplicationSession):
 		yield self.register(self.getProcessData, u'ch.db.getprocessdata')
 		yield self.register(self.getAllTimers, u'ch.db.getalltimers')
 
+	def onDisconnect(self):
+		print("disconnecting cleanly?")
 
 if __name__ == '__main__':
 	url = u"ws://127.0.0.1:8080/ws"

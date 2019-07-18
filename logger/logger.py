@@ -3,6 +3,7 @@ from os import environ
 
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
+import datetime
 
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
@@ -26,10 +27,11 @@ class Component(ApplicationSession):
 
 	def on_event(self, received):
 		print("Got event: {}".format(received))
+		timeStr = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 		if received['level'] == 'debug':
-			logging.debug(received['msg'])
+			logging.debug(timeStr+" -- " + received['msg'])
 		else:
-			logging.info(received['msg'])	
+			logging.info(timeStr+ " -- " + received['msg'])	
 
 	def onDisconnect(self):
 		print("disconnected")

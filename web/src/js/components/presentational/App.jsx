@@ -8,7 +8,7 @@ import GroupContainer from '../container/GroupContainer.jsx';
 import ProcessContainer from '../container/ProcessContainer.jsx';
 import TimerContainer from '../container/TimerContainer.jsx';
 import AddTimerContainer from '../container/AddTimerContainer.jsx';
-import { Container, Grid, Header, Button, Icon} from 'semantic-ui-react';
+import { Container, Grid, Header, Button, Icon, List} from 'semantic-ui-react';
 
 const App = () => (
 	<Container style={{ marginTop: '3em' }}>
@@ -24,6 +24,20 @@ const App = () => (
 					<SwitchGroupContainer />
 			</WampContainer>
 		</Grid>
+		<Header as='h2' dividing>
+			The Ugly Valve List
+		</Header>
+		<div>
+			<List.List as='ol'>
+				<List.Item as='li'>Lemongrass</List.Item>
+				<List.Item as='li'>Pots sur la rambarde</List.Item>
+				<List.Item as='li'>edamame au sol?</List.Item>
+				<List.Item as='li'>Concombre?</List.Item>
+				<List.Item as='li'>Tomates & Coriandre</List.Item>
+				<List.Item as='li'>Basilic</List.Item>
+				<List.Item as='li'>Tomates 2</List.Item>
+			</List.List>
+		</div>
 		<Header as='h2' dividing>
 			Logging
 		</Header>

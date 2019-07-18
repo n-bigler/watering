@@ -7,6 +7,7 @@ class GroupContainer extends Component {
 		this.state = {
 			content: []
 		}
+		this.getContent = this.getContent.bind(this);
 	}
 
 	getContent(){
@@ -16,8 +17,7 @@ class GroupContainer extends Component {
 		.then(res => res.json())
 		.then(
 			(result) => {
-				console.log(this._isMounted)
-					this.setState({content: result})
+				this.setState({content: result});
 			},
 			(error) => {
 					this.setState({error})
@@ -39,7 +39,7 @@ class GroupContainer extends Component {
 		let allContent = [];
 		for(let it = 0; it < this.state.content.length; it++){
 			let childrenWithProps = React.Children.map(this.props.children, child =>
-				React.cloneElement(child, {...this.state.content[it]})  
+				React.cloneElement(child, {...this.state.content[it], getContent: this.getContent})  
 			);	
 			allContent.push(childrenWithProps);
 		}

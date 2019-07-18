@@ -17,6 +17,7 @@ class TimerContainer extends Component {
 		.then(
 			(result) => {
 				console.log(result);
+				this.props.getContent();
 			}
 		);
 	}
