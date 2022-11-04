@@ -20,7 +20,7 @@ python-dateutil==2.7.5
 python-editor==1.0.3
 six==1.12.0
 SQLAlchemy==1.2.16
-Twisted==18.9.0
+Twisted==22.10.0
 txaio==18.8.1
 Werkzeug==0.14.1
 zope.interface==4.6.0
